@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("admin")
+  createdAt    DateTime @default(now())
+}
+
+model Route {
+  id         String   @id @default(cuid())
+  name       String
+  startStop  String
+  endStop    String
+  status     String   @default("active")
+  stops      Stop[]
+  buses      Bus[]
+  trips      Trip[]
+  createdAt  DateTime @default(now())
+}
+
+model Stop {
+  id        String  @id @default(cuid())
+  name      String
+  order     Int
+  lat       Float
+  lng       Float
+  routeId   String
+  route     Route   @relation(fields: [routeId], references: [id])
+}
+
+model Bus {
+  id           String          @id @default(cuid())
+  plateNumber  String          @unique
+  model        String
+  capacity     Int
+  condition    String          @default("good")
+  routeId      String?
+  route        Route?          @relation(fields: [routeId], references: [id])
+  driver       Driver?
+  alerts       EmergencyAlert[]
+  createdAt    DateTime        @default(now())
+}
+
+model Driver {
+  id            String   @id @default(cuid())
+  name          String
+  phone         String
+  licenseNumber String   @unique
+  busId         String?  @unique
+  bus           Bus?     @relation(fields: [busId], references: [id])
+  status        String   @default("active")
+  ratings       Rating[]
+  createdAt     DateTime @default(now())
+}
+
+model Student {
+  id                String          @id @default(cuid())
+  universityId      String          @unique
+  name              String
+  email             String          @unique
+  status            String          @default("active")
+  blacklistedReason String?
+  blacklistedUntil  DateTime?
+  points            StudentPoints?
+  alerts            EmergencyAlert[]
+  ratings           Rating[]
+  createdAt         DateTime        @default(now())
+}
+
+model StudentPoints {
+  id         String  @id @default(cuid())
+  studentId  String  @unique
+  student    Student @relation(fields: [studentId], references: [id])
+  total      Int     @default(0)
+  freeRides  Int     @default(0)
+}
+
+model Trip {
+  id        String   @id @default(cuid())
+  type      String   @default("special")
+  routeId   String
+  route     Route    @relation(fields: [routeId], references: [id])
+  dateTime  DateTime
+  price     Float
+  seats     Int
+  booked    Int      @default(0)
+  status    String   @default("pending")
+  parcels   Parcel[]
+  createdAt DateTime @default(now())
+}
+
+model Parcel {
+  id           String   @id @default(cuid())
+  trackingCode String   @unique
+  description  String
+  status       String   @default("pending")
+  tripId       String?
+  trip         Trip?    @relation(fields: [tripId], references: [id])
+  createdAt    DateTime @default(now())
+}
+
+model Rating {
+  id          String   @id @default(cuid())
+  driverId    String
+  driver      Driver   @relation(fields: [driverId], references: [id])
+  studentId   String?
+  student     Student? @relation(fields: [studentId], references: [id])
+  score       Float
+  category    String
+  comment     String?
+  isAnonymous Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model EmergencyAlert {
+  id         String   @id @default(cuid())
+  type       String   @default("PANIC_BUTTON")
+  studentId  String
+  student    Student  @relation(fields: [studentId], references: [id])
+  busId      String
+  bus        Bus      @relation(fields: [busId], references: [id])
+  lat        Float
+  lng        Float
+  message    String?
+  status     String   @default("active")
+  createdAt  DateTime @default(now())
+  resolvedAt DateTime?
+}
+
+model RewardRule {
+  id     String @id @default(cuid())
+  label  String
+  points Int
+}
