@@ -375,6 +375,9 @@ tr:hover td { background: rgba(59,130,246,.03); }
 .pill.en-route { background: rgba(59,130,246,.12); color: var(--accent); }
 .pill.blacklisted { background: rgba(239,68,68,.18); color: var(--accent3); border: 1px solid rgba(239,68,68,.3); }
 .pill.emergency { background: rgba(239,68,68,.15); color: var(--accent3); }
+.pill.confirmed { background: rgba(16,185,129,.15); color: var(--accent4); }
+.pill.canceled, .pill.cancelled { background: rgba(239,68,68,.12); color: var(--accent3); }
+.pill.pending-approval { background: rgba(245,158,11,.12); color: var(--warn); }
 
 /* ── DRIVER CELL ── */
 .driver-cell { display: flex; align-items: center; gap: 8px; }

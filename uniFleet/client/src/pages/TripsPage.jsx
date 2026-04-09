@@ -1,16 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
 import Pill from '../components/Pill';
-import { getTrips, getRoutes, createTrip, updateTrip, deleteTrip } from '../services/api';
+import { getTrips, getRoutes, getBuses, createTrip, updateTrip, deleteTrip } from '../services/api';
 
-const STATUS_OPTIONS = ['pending', 'confirmed', 'completed', 'cancelled'];
+const STATUS_OPTIONS = ['confirmed', 'pending approval', 'canceled'];
 
 const emptyForm = {
-  routeId: '',
+  routeNameString: '',
+  busNumberString: '',
   dateTime: '',
   price: 0,
   seats: 50,
-  status: 'pending',
+  status: 'pending approval',
 };
 
 function Modal({ title, onClose, children }) {
@@ -62,6 +63,7 @@ const inputStyle = {
 export default function TripsPage() {
   const [trips, setTrips] = useState([]);
   const [routes, setRoutes] = useState([]);
+  const [buses, setBuses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -75,9 +77,10 @@ export default function TripsPage() {
   async function loadData() {
     setLoading(true);
     try {
-      const [tripsRes, routesRes] = await Promise.all([getTrips(), getRoutes()]);
+      const [tripsRes, routesRes, busesRes] = await Promise.all([getTrips(), getRoutes(), getBuses()]);
       setTrips(tripsRes.data);
       setRoutes(routesRes.data);
+      setBuses(busesRes.data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -95,11 +98,12 @@ export default function TripsPage() {
   function openEdit(trip) {
     setEditing(trip);
     setForm({
-      routeId: trip.routeId,
-      dateTime: trip.dateTime.split('.')[0], // Format for datetime-local
-      price: trip.price,
-      seats: trip.seats,
-      status: trip.status,
+      routeNameString: trip.routeNameString || '',
+      busNumberString: trip.busNumberString || '',
+      dateTime: trip.dateTime ? trip.dateTime.split('.')[0] : '', // Format for datetime-local
+      price: trip.price || 0,
+      seats: trip.seats || 50,
+      status: trip.status || 'pending approval',
     });
     setErrors({});
     setShowModal(true);
@@ -107,7 +111,7 @@ export default function TripsPage() {
 
   function validate() {
     const e = {};
-    if (!form.routeId) e.routeId = 'Route is required';
+    if (!form.routeNameString) e.routeNameString = 'Route is required';
     if (!form.dateTime) e.dateTime = 'Date & Time is required';
     if (form.price < 0) e.price = 'Price cannot be negative';
     if (form.seats <= 0) e.seats = 'Seats must be greater than 0';
@@ -144,16 +148,47 @@ export default function TripsPage() {
     }
   }
 
+  const exportSchedule = () => {
+    if (trips.length === 0) return;
+    
+    // CSV Header
+    const headers = ["TRIP ID", "DATE & TIME", "BUS", "SEATS", "PRICE", "STATUS"];
+    const rows = trips.map((trip, idx) => [
+      `ST#${idx + 1}`,
+      new Date(trip.dateTime).toLocaleString([], { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
+      trip.busNumberString || (trip.bus ? trip.bus.plateNumber : 'N/A'),
+      `${trip.booked}/${trip.seats}`,
+      `${trip.price} JD`,
+      trip.status
+    ]);
+
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `special_trip_schedule_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="content">
-      <div className="toolbar">
-        <button className="btn btn-primary" onClick={openAdd}>+ New Special Trip</button>
+
+
+      <div className="toolbar" style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+        <button className="btn btn-primary" onClick={openAdd} style={{ padding: '10px 20px', borderRadius: '8px' }}>+ Schedule Trip</button>
+        <button className="btn btn-ghost" onClick={exportSchedule} style={{ padding: '10px 20px', borderRadius: '8px', background: 'var(--surface2)', border: '1px solid var(--border)' }}>Export Schedule</button>
       </div>
 
       <div className="panel">
-        <div className="panel-header">
-          <div className="panel-title">⤷ Active Special Trips</div>
-          <span style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>{trips.length} trips total</span>
+        <div className="panel-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '12px', padding: '20px' }}>
+          <span role="img" aria-label="calendar" style={{ fontSize: '1.2rem' }}>🗓️</span>
+          <div className="panel-title" style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>Special Trip Schedule</div>
         </div>
 
         {loading ? (
@@ -162,56 +197,48 @@ export default function TripsPage() {
           <table>
             <thead>
               <tr>
-                <th>Trip ID</th>
-                <th>Route & Schedule</th>
-                <th>Price</th>
-                <th>Seat Occupancy</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th style={{ textAlign: 'left', padding: '12px 20px', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Trip ID</th>
+                <th style={{ textAlign: 'left', padding: '12px 20px', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Date & Time</th>
+                <th style={{ textAlign: 'left', padding: '12px 20px', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Bus</th>
+                <th style={{ textAlign: 'left', padding: '12px 20px', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Seats</th>
+                <th style={{ textAlign: 'left', padding: '12px 20px', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Price</th>
+                <th style={{ textAlign: 'left', padding: '12px 20px', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Status</th>
+                <th style={{ textAlign: 'center', padding: '12px 20px', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {trips.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', color: 'var(--muted)', padding: '30px' }}>
+                  <td colSpan={7} style={{ textAlign: 'center', color: 'var(--muted)', padding: '30px' }}>
                     No special trips scheduled.
                   </td>
                 </tr>
               )}
-              {trips.map(trip => (
-                <tr key={trip.id}>
-                  <td style={{ color: 'var(--accent)', fontFamily: 'Syne, sans-serif', fontSize: '0.85rem' }}>
-                    #{trip.id.slice(0, 6).toUpperCase()}
+              {trips.map((trip, idx) => (
+                <tr key={trip.id} style={{ borderTop: '1px solid var(--border)' }}>
+                  <td style={{ color: 'var(--accent)', fontFamily: 'Syne, sans-serif', fontSize: '0.85rem', padding: '16px 20px' }}>
+                    ST#{idx + 1}
                   </td>
-                  <td>
-                    <div style={{ fontWeight: 600 }}>{trip.route?.name}</div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>
-                      {new Date(trip.dateTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                  <td style={{ padding: '16px 20px' }}>
+                    <div style={{ fontSize: '0.875rem' }}>
+                      {new Date(trip.dateTime).toLocaleString([], { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </td>
-                  <td style={{ fontWeight: 600 }}>${trip.price.toFixed(2)}</td>
-                  <td>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem' }}>
-                        <span>{trip.booked} / {trip.seats} seats</span>
-                        <span>{Math.round((trip.booked/trip.seats)*100)}%</span>
-                      </div>
-                      <div style={{ width: '120px', height: '6px', background: 'var(--surface2)', borderRadius: '10px', overflow: 'hidden' }}>
-                        <div style={{ 
-                          width: `${(trip.booked/trip.seats)*100}%`, 
-                          height: '100%', 
-                          background: (trip.booked/trip.seats) > 0.8 ? 'var(--accent3)' : 'var(--accent)',
-                          transition: 'width 0.5s ease'
-                        }} />
-                      </div>
-                    </div>
+                  <td style={{ padding: '16px 20px', fontSize: '0.875rem' }}>
+                    {trip.busNumberString || (trip.bus ? `Bus #${trip.bus.plateNumber}` : <span style={{ color: 'var(--muted)' }}>Unassigned</span>)}
                   </td>
-                  <td><Pill status={trip.status} /></td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: '0.72rem' }} onClick={() => openEdit(trip)}>✏️</button>
-                      <button className="btn btn-danger" style={{ padding: '4px 10px', fontSize: '0.72rem' }} onClick={() => setConfirmDelete(trip)}>🗑</button>
-                    </div>
+                  <td style={{ padding: '16px 20px', fontSize: '0.875rem' }}>
+                    {trip.booked} / {trip.seats}
+                  </td>
+                  <td style={{ padding: '16px 20px', fontWeight: 600, fontSize: '0.875rem' }}>
+                    {trip.price} JD
+                  </td>
+                  <td style={{ padding: '16px 20px' }}>
+                    <Pill status={trip.status} />
+                  </td>
+                  <td style={{ padding: '16px 20px', textAlign: 'center' }}>
+                    <button className="btn btn-ghost" style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'var(--surface2)', borderRadius: '6px' }} onClick={() => openEdit(trip)}>Edit</button>
+                    <button className="btn btn-danger" style={{ padding: '6px 12px', fontSize: '0.8rem', marginLeft: '8px' }} onClick={() => setConfirmDelete(trip)}>🗑</button>
                   </td>
                 </tr>
               ))}
@@ -224,17 +251,14 @@ export default function TripsPage() {
         <Modal title={editing ? '✏️ Edit Special Trip' : '+ Create Special Trip'} onClose={() => setShowModal(false)}>
           {errors.general && <div style={{ color: 'var(--accent3)', fontSize: '0.82rem', marginBottom: '10px' }}>⚠️ {errors.general}</div>}
 
-          <FormField label="Assigned Route" error={errors.routeId}>
-            <select
-              style={{ ...inputStyle, cursor: 'pointer' }}
-              value={form.routeId}
-              onChange={e => setForm({ ...form, routeId: e.target.value })}
-            >
-              <option value="">Select a route...</option>
-              {routes.map(r => (
-                <option key={r.id} value={r.id}>{r.name} ({r.startStop} → {r.endStop})</option>
-              ))}
-            </select>
+          <FormField label="Assigned Route" error={errors.routeNameString}>
+            <input
+              type="text"
+              placeholder="e.g. North Campus Loop"
+              style={inputStyle}
+              value={form.routeNameString}
+              onChange={e => setForm({ ...form, routeNameString: e.target.value })}
+            />
           </FormField>
 
           <FormField label="Departure Date & Time" error={errors.dateTime}>
@@ -246,10 +270,21 @@ export default function TripsPage() {
             />
           </FormField>
 
+          <FormField label="Specify Bus" error={errors.busNumberString}>
+            <input
+              type="text"
+              placeholder="e.g. NBT-101"
+              style={inputStyle}
+              value={form.busNumberString}
+              onChange={e => setForm({ ...form, busNumberString: e.target.value })}
+            />
+          </FormField>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-            <FormField label="Ticket Price ($)" error={errors.price}>
+            <FormField label="Ticket Price (JD)" error={errors.price}>
               <input
                 type="number"
+                step="0.1"
                 style={inputStyle}
                 value={form.price}
                 onChange={e => setForm({ ...form, price: parseFloat(e.target.value) })}

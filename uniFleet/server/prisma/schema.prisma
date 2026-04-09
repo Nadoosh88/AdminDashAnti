@@ -48,6 +48,7 @@ model Bus {
   route        Route?          @relation(fields: [routeId], references: [id])
   driver       Driver?
   alerts       EmergencyAlert[]
+  trips        Trip[]
   createdAt    DateTime        @default(now())
 }
 
@@ -86,17 +87,21 @@ model StudentPoints {
 }
 
 model Trip {
-  id        String   @id @default(cuid())
-  type      String   @default("special")
-  routeId   String
-  route     Route    @relation(fields: [routeId], references: [id])
-  dateTime  DateTime
-  price     Float
-  seats     Int
-  booked    Int      @default(0)
-  status    String   @default("pending")
-  parcels   Parcel[]
-  createdAt DateTime @default(now())
+  id               String   @id @default(cuid())
+  type             String   @default("special")
+  routeId          String?
+  route            Route?   @relation(fields: [routeId], references: [id])
+  routeNameString  String?
+  busNumberString  String?
+  dateTime         DateTime
+  price            Float
+  seats            Int
+  booked           Int      @default(0)
+  status           String   @default("pending")
+  busId            String?
+  bus              Bus?     @relation(fields: [busId], references: [id])
+  parcels          Parcel[]
+  createdAt        DateTime @default(now())
 }
 
 model Parcel {

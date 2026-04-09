@@ -12,6 +12,10 @@ export default function Pill({ status }) {
     fault: 'inactive',
     good: 'active',
     resolved: 'active',
+    confirmed: 'active',
+    'pending approval': 'pending-approval',
+    canceled: 'inactive',
+    cancelled: 'inactive',
   };
   const cls = map[status?.toLowerCase()] || 'pending';
   return <span className={`pill ${cls}`}>{status}</span>;
