@@ -36,7 +36,9 @@ export const deleteDriver       = (id) => api.delete(`/drivers/${id}`);
 export const getStudents        = () => api.get('/students');
 export const getLeaderboard     = () => api.get('/students/leaderboard');
 export const blacklistStudent   = (id, data) => api.post(`/students/${id}/blacklist`, data);
+export const blacklistManualStudent = (data) => api.post('/students/blacklist-manual', data);
 export const liftBlacklist      = (id) => api.delete(`/students/${id}/blacklist`);
+export const deleteStudent       = (id) => api.delete(`/students/${id}`);
 
 // Trips
 export const getTrips           = () => api.get('/trips');

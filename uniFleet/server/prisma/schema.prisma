@@ -61,6 +61,7 @@ model Driver {
   bus           Bus?     @relation(fields: [busId], references: [id])
   status        String   @default("active")
   ratings       Rating[]
+  parcels       Parcel[]
   createdAt     DateTime @default(now())
 }
 
@@ -111,6 +112,8 @@ model Parcel {
   status       String   @default("pending")
   tripId       String?
   trip         Trip?    @relation(fields: [tripId], references: [id])
+  driverId     String?
+  driver       Driver?  @relation(fields: [driverId], references: [id])
   createdAt    DateTime @default(now())
 }
 
