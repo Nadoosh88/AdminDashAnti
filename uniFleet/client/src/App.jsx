@@ -20,7 +20,7 @@ function ProtectedLayout({ children }) {
   const { token } = useAuth();
   if (!token) return <Navigate to="/login" replace />;
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
       <Sidebar />
       <div className="main">
         <Topbar />

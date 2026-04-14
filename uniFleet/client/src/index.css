@@ -42,6 +42,7 @@ body {
 #root {
   width: 100%;
   display: flex;
+  min-height: 100vh;
 }
 
 /* ── SCROLLBAR ── */
@@ -186,6 +187,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  width: calc(100% - var(--sidebar-w));
 }
 
 /* ── TOPBAR ── */
@@ -197,6 +199,7 @@ body {
   align-items: center;
   justify-content: space-between;
   position: sticky; top: 0; z-index: 50;
+  width: 100%;
 }
 
 .topbar-left h2 {
@@ -210,22 +213,28 @@ body {
   margin-top: 1px;
 }
 
-.topbar-right { display: flex; align-items: center; gap: 14px; }
+.topbar-right { 
+  display: flex; 
+  align-items: center; 
+  gap: 14px;
+  flex: 1;
+  justify-content: flex-end;
+}
 
 .search-bar {
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 7px 14px;
+  padding: 8px 16px;
   color: var(--text);
   font-family: 'DM Sans', sans-serif;
   font-size: 0.82rem;
-  width: 200px;
+  width: 320px;
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
 }
 
-.search-bar:focus { border-color: var(--accent); }
+.search-bar:focus { border-color: var(--accent); width: 400px; }
 
 .icon-btn {
   background: var(--surface2);
@@ -248,7 +257,7 @@ body {
 }
 
 /* ── CONTENT ── */
-.content { padding: 24px 28px; flex: 1; }
+.content { padding: 20px 24px; flex: 1; width: 100%; }
 
 /* ── STAT CARDS ── */
 .stats-grid {
@@ -256,47 +265,49 @@ body {
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin-bottom: 24px;
+  width: 100%;
 }
 
 .stat-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 20px;
+  padding: 8px 18px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
   position: relative;
-  overflow: hidden;
-  transition: transform 0.18s, border-color 0.18s;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
 }
 
-.stat-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+.stat-card:hover { transform: translateY(-4px); border-color: var(--accent); }
 
-.stat-card::after {
-  content: '';
-  position: absolute; top: -30px; right: -20px;
-  width: 90px; height: 90px;
-  border-radius: 50%; opacity: 0.08;
+/* Themed Top Borders */
+
+.stat-label { 
+  font-size: 0.65rem; 
+  color: var(--muted); 
+  text-transform: uppercase; 
+  letter-spacing: 0.8px; 
+  font-weight: 600;
+  margin-bottom: 0px;
 }
-
-.stat-card:nth-child(1)::after { background: var(--accent); }
-.stat-card:nth-child(2)::after { background: var(--accent2); }
-.stat-card:nth-child(3)::after { background: var(--accent4); }
-.stat-card:nth-child(4)::after { background: var(--accent3); }
-
-.stat-label { font-size: 0.75rem; color: var(--muted); margin-bottom: 8px; }
 
 .stat-value {
   font-family: 'Syne', sans-serif;
-  font-size: 2rem; font-weight: 800;
+  font-size: 1.4rem; font-weight: 800;
+  margin-top: 0px;
+  line-height: 1.2;
 }
 
-.stat-card:nth-child(1) .stat-value { color: var(--accent); }
-.stat-card:nth-child(2) .stat-value { color: var(--accent2); }
-.stat-card:nth-child(3) .stat-value { color: var(--accent4); }
-.stat-card:nth-child(4) .stat-value { color: var(--accent3); }
+.stat-card:nth-child(1) .stat-value { color: var(--text); }
+.stat-card:nth-child(2) .stat-value { color: var(--text); }
+.stat-card:nth-child(3) .stat-value { color: var(--text); }
+.stat-card:nth-child(4) .stat-value { color: var(--text); }
 
-.stat-sub { font-size: 0.72rem; color: var(--muted); margin-top: 6px; }
-.stat-icon { font-size: 1.4rem; margin-bottom: 10px; }
-.stat-trend { font-size: 0.72rem; margin-top: 4px; color: var(--accent4); }
+.stat-sub { font-size: 0.72rem; color: var(--muted); }
+.stat-icon { font-size: 1.1rem; margin-bottom: 2px; opacity: 0.7; }
+.stat-trend { font-size: 0.65rem; color: var(--accent4); margin-top: 4px; font-weight: 500; }
 .stat-trend.down { color: var(--accent3); }
 
 /* ── GRID LAYOUT ── */
@@ -304,18 +315,21 @@ body {
   display: grid;
   grid-template-columns: 1.4fr 1fr;
   gap: 16px; margin-bottom: 24px;
+  width: 100%;
 }
 
 .dashboard-grid-3 {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 16px; margin-bottom: 24px;
+  width: 100%;
 }
 
 .dashboard-grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px; margin-bottom: 24px;
+  width: 100%;
 }
 
 /* ── PANEL ── */
@@ -324,6 +338,7 @@ body {
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 20px;
+  width: 100%;
 }
 
 .panel-header {
