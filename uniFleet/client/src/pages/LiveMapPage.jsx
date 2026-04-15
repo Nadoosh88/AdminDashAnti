@@ -6,6 +6,11 @@ import { useSocket } from '../hooks/useSocket';
 
 export default function LiveMapPage() {
   const [busPositions, setBusPositions] = useState([]);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [trackOpen, setTrackOpen] = useState(false);
+  const [trackedBusId, setTrackedBusId] = useState(null);
+  const [activeRoute, setActiveRoute] = useState(null);
+  const [tempRoute, setTempRoute] = useState('');
 
   useSocket({
     onBusLocation: (data) => {
@@ -32,12 +37,159 @@ export default function LiveMapPage() {
       <div className="panel">
         <div className="panel-header">
           <div className="panel-title">🗺 Full Live Map — All Routes</div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="btn btn-ghost" style={{ fontSize: '0.78rem', padding: '6px 12px' }}>Filter Route</button>
-            <button className="btn btn-primary" style={{ fontSize: '0.78rem', padding: '6px 12px' }}>Track Bus</button>
+          <div style={{ display: 'flex', gap: '12px', position: 'relative', zIndex: 50 }}>
+            {/* Filter Route Button */}
+            <div style={{ position: 'relative' }}>
+              <button className="btn btn-ghost" onClick={() => { setFilterOpen(!filterOpen); setTrackOpen(false); }} style={{ 
+                fontSize: '0.78rem', padding: '6px 12px',
+                background: filterOpen ? 'var(--surface2)' : 'transparent',
+                borderColor: filterOpen ? 'var(--accent)' : 'transparent',
+              }}>Filter Route</button>
+              
+              {filterOpen && (
+                <div style={{ 
+                  position: 'absolute', top: 'calc(100% + 12px)', right: 0, 
+                  background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px',
+                  width: '300px', padding: '20px', boxShadow: '0 10px 40px rgba(0,0,0,0.5)', zIndex: 100
+                }}>
+                  <h4 style={{ fontSize: '0.9rem', marginBottom: '16px', color: 'var(--text)', borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
+                    🛤️ Filter Route
+                  </h4>
+                  
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '6px' }}>Route Name/ID</label>
+                    <select value={tempRoute} onChange={(e) => setTempRoute(e.target.value)} style={{ width: '100%', padding: '8px 12px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text)', fontSize: '0.8rem', outline: 'none' }}>
+                      <option value="">Select Route...</option>
+                      <option value="Route 10A">Route 10A</option>
+                      <option value="Route 15">Route 15</option>
+                      <option value="University Express">University Express</option>
+                    </select>
+                  </div>
+
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '6px' }}>Direction</label>
+                    <select style={{ width: '100%', padding: '8px 12px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text)', fontSize: '0.8rem', outline: 'none' }}>
+                      <option>Both Directions</option>
+                      <option>Inbound (To University)</option>
+                      <option>Outbound (From University)</option>
+                    </select>
+                  </div>
+
+                  <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input type="checkbox" id="delayedOnly" style={{ cursor: 'pointer' }} />
+                    <label htmlFor="delayedOnly" style={{ fontSize: '0.75rem', color: 'var(--text)', cursor: 'pointer' }}>Status Filter: Delayed Only</label>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button className="btn btn-ghost" style={{ flex: 1, fontSize: '0.75rem' }} onClick={() => { setActiveRoute(null); setTempRoute(''); setFilterOpen(false); }}>Clear Filter</button>
+                    <button className="btn btn-primary" style={{ flex: 1, fontSize: '0.75rem' }} onClick={() => { setActiveRoute(tempRoute || null); setFilterOpen(false); }}>Apply Filter</button>
+                  </div>
+                  
+                  <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                    <button onClick={() => { setActiveRoute(null); setTempRoute(''); setFilterOpen(false); }} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}>
+                      Show All Active Buses
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Track Bus Button */}
+            <div style={{ position: 'relative' }}>
+              <button className="btn btn-primary" onClick={() => { setTrackOpen(!trackOpen); setFilterOpen(false); }} style={{ 
+                fontSize: '0.78rem', padding: '6px 12px',
+                background: trackOpen || trackedBusId ? 'var(--accent)' : 'transparent', 
+                borderColor: 'var(--accent)',
+                boxShadow: trackOpen || trackedBusId ? '0 0 12px var(--accent)' : 'none',
+              }}>Track Bus</button>
+              
+              {trackOpen && (
+                <div style={{ 
+                  position: 'absolute', top: 'calc(100% + 12px)', right: 0, 
+                  background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px',
+                  padding: '16px', width: '280px', boxShadow: '0 10px 40px rgba(0,0,0,0.5)', zIndex: 100
+                }}>
+                  <h4 style={{ fontSize: '0.85rem', marginBottom: '12px', color: 'var(--text)' }}>
+                    🎯 Track Specific Bus
+                  </h4>
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--muted)', marginBottom: '6px' }}>Select from Active Buses</label>
+                    <select 
+                      onChange={(e) => { setTrackedBusId(e.target.value); setTrackOpen(false); }}
+                      value={trackedBusId || ''}
+                      style={{ width: '100%', padding: '8px 12px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text)', fontSize: '0.8rem', outline: 'none' }}
+                    >
+                      <option value="">-- Choose a Bus --</option>
+                      {busPositions.map(b => (
+                        <option key={b.busId} value={b.busId}>{b.plateNumber} (Rte {b.routeId || '?'})</option>
+                      ))}
+                      {!busPositions.length && <option value="JBS-105">JBS-105 (Demo)</option>}
+                    </select>
+                  </div>
+                  <div style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--muted)', margin: '10px 0' }}>— OR —</div>
+                  <div onClick={() => { setTrackedBusId('JBS-105'); setTrackOpen(false); }} style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--accent)', cursor: 'pointer', padding: '8px', background: 'rgba(59,130,246,0.1)', borderRadius: '6px', border: '1px dashed var(--accent)' }}>
+                    🖱️ Select from Map
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-        <LiveMap buses={busPositions} height="480px" />
+        
+        {/* Map Container with LiveFocus Panel */}
+        <div style={{ position: 'relative' }}>
+          <LiveMap buses={busPositions} height="480px" trackedBusId={trackedBusId} activeRoute={activeRoute} />
+          
+          {trackedBusId && (
+            <div style={{
+              position: 'absolute', top: '20px', left: '20px', zIndex: 400,
+              background: 'rgba(23, 26, 31, 0.85)', backdropFilter: 'blur(12px)',
+              border: '1px solid var(--border)', borderRadius: '16px',
+              padding: '20px', width: '280px', boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
+              animation: 'slideIn 0.3s ease'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                <div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, marginBottom: '4px' }}>LIVE FOCUS</div>
+                  <h3 style={{ fontSize: '1.2rem', fontFamily: 'Syne', margin: 0 }}>Bus {trackedBusId}</h3>
+                </div>
+                <button className="btn-ghost" onClick={() => setTrackedBusId(null)} style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '0.7rem', border: '1px solid var(--border)', cursor: 'pointer', background: 'var(--surface2)', color: 'var(--text)' }}>Stop Tracking</button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
+                  <span style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>Current Speed</span>
+                  <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>45 km/h</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
+                  <span style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>Next Stop</span>
+                  <span style={{ fontWeight: 600, fontSize: '0.85rem', textAlign: 'right' }}>Engineering Bldg<br/><span style={{ color: 'var(--accent4)', fontSize: '0.7rem' }}>ETA: 3 mins</span></span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
+                  <span style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>Occupancy Level</span>
+                  <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--warn)' }}>80% Full</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
+                  <span style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>Fuel Level</span>
+                  <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>65%</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>Driver Status</span>
+                  <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--accent4)' }}>Active</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <button className="btn btn-primary" style={{ width: '100%', fontSize: '0.8rem', display: 'flex', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}>
+                  ✉️ Message Driver
+                </button>
+                <button className="btn btn-ghost" style={{ width: '100%', fontSize: '0.8rem', display: 'flex', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}>
+                  📷 View Interior Camera
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Bus List Table */}
         {busPositions.length > 0 && (

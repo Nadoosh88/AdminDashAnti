@@ -2,26 +2,38 @@ import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-function makeBusIcon(isEmergency) {
+function makeBusIcon(isEmergency, isTracked, isVisible) {
+  if (!isVisible) {
+    return L.divIcon({ className: '', html: '<div style="display:none;"></div>', iconSize: [0,0] });
+  }
+
   const color = isEmergency ? '#ef4444' : '#10b981';
-  const animation = isEmergency ? 'pulse-alert' : 'pulse-bus';
+  let animation = isEmergency ? 'pulse-alert' : 'pulse-bus';
+  if (isTracked) animation = 'pulse-tracked';
+  
+  const size = isTracked ? 20 : 14;
+  const offset = size / 2;
+  const border = isTracked ? '3px solid #fff' : '2px solid #fff';
+  
   return L.divIcon({
     className: '',
     html: `<div style="
-      width:14px;height:14px;border-radius:50%;
-      background:${color};border:2px solid #fff;
+      width:${size}px;height:${size}px;border-radius:50%;
+      background:${color};border:${border};
       box-shadow:0 0 10px ${color};
       animation:${animation} 2s infinite;
+      transition:all 0.4s ease;
     "></div>`,
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
+    iconSize: [size, size],
+    iconAnchor: [offset, offset],
   });
 }
 
-export default function LiveMap({ buses = [], height = '430px' }) {
+export default function LiveMap({ buses = [], height = '430px', trackedBusId = null, activeRoute = null }) {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const markersRef = useRef({});
+  const polylineRef = useRef(null);
 
   useEffect(() => {
     if (mapInstance.current) return;
@@ -39,14 +51,60 @@ export default function LiveMap({ buses = [], height = '430px' }) {
 
   useEffect(() => {
     if (!mapInstance.current) return;
+    
+    // Polyline drawing & zoom logic
+    if (polylineRef.current) {
+      polylineRef.current.remove();
+      polylineRef.current = null;
+    }
+
+    if (activeRoute) {
+      // Mock solid route path
+      const routePathCoords = [
+        [31.9539, 35.9106],
+        [31.9560, 35.9220],
+        [31.9680, 35.9150],
+        [31.9800, 35.9400]
+      ];
+      polylineRef.current = L.polyline(routePathCoords, { color: '#3b82f6', weight: 5, opacity: 0.8 }).addTo(mapInstance.current);
+      mapInstance.current.fitBounds(polylineRef.current.getBounds(), { padding: [50, 50], maxZoom: 15 });
+    } else if (trackedBusId) {
+      // Find tracked bus for dotted path
+      const bus = buses.find(b => b.busId === trackedBusId || b.plateNumber === trackedBusId);
+      if (bus && bus.lat) {
+        const historyPath = [
+          [bus.lat - 0.008, bus.lng - 0.008],
+          [bus.lat - 0.003, bus.lng - 0.001],
+          [bus.lat, bus.lng]
+        ];
+        polylineRef.current = L.polyline(historyPath, { color: '#10b981', weight: 4, dashArray: '10, 10', opacity: 0.8 }).addTo(mapInstance.current);
+        mapInstance.current.setView([bus.lat, bus.lng], 16, { animate: true, duration: 1.5 });
+      }
+    } else {
+      mapInstance.current.setView([31.9539, 35.9106], 12, { animate: true });
+    }
+
     buses.forEach((bus) => {
+      // Visibility Filtering
+      let isVisible = true;
+      if (activeRoute) {
+        // Mock matching logic if real routeId is missing
+        const rId = bus.routeId || (String(bus.busId).includes('1') ? 'Route 10A' : 'University Express');
+        if (rId !== activeRoute) isVisible = false;
+      }
+      if (trackedBusId) {
+        if (bus.busId !== trackedBusId && bus.plateNumber !== trackedBusId) isVisible = false;
+      }
+
       const isEmergency = bus.status === 'fault' || bus.status === 'emergency';
-      const icon = makeBusIcon(isEmergency);
+      const isTracked = trackedBusId && (bus.busId === trackedBusId || bus.plateNumber === trackedBusId);
+      const icon = makeBusIcon(isEmergency, isTracked, isVisible);
       const label = bus.plateNumber || bus.busId || 'Bus';
+      
       if (markersRef.current[bus.busId]) {
         markersRef.current[bus.busId].setLatLng([bus.lat, bus.lng]);
         markersRef.current[bus.busId].setIcon(icon);
-      } else {
+      } else if (isVisible) {
         const marker = L.marker([bus.lat, bus.lng], { icon })
           .bindTooltip(`🚌 ${label}${bus.driverName ? ` · ${bus.driverName}` : ''}`, {
             permanent: false, direction: 'top', offset: [0, -10],
@@ -55,11 +113,15 @@ export default function LiveMap({ buses = [], height = '430px' }) {
         markersRef.current[bus.busId] = marker;
       }
     });
-  }, [buses]);
+  }, [buses, trackedBusId, activeRoute]);
 
   return (
     <div style={{ position: 'relative' }}>
       <style>{`
+        .leaflet-tile-pane {
+          filter: ${trackedBusId ? 'brightness(0.3) grayscale(0.5)' : 'brightness(1) grayscale(0)'};
+          transition: filter 0.8s ease;
+        }
         @keyframes pulse-bus {
           0%, 100% { box-shadow: 0 0 6px #10b981; }
           50% { box-shadow: 0 0 16px #10b981, 0 0 30px #10b981; }
@@ -67,6 +129,10 @@ export default function LiveMap({ buses = [], height = '430px' }) {
         @keyframes pulse-alert {
           0%, 100% { box-shadow: 0 0 8px #ef4444; }
           50% { box-shadow: 0 0 20px #ef4444, 0 0 40px #ef4444; }
+        }
+        @keyframes pulse-tracked {
+          0%, 100% { box-shadow: 0 0 0px 4px rgba(59,130,246,0.6), 0 0 12px #3b82f6; transform: scale(1); }
+          50% { box-shadow: 0 0 0px 8px rgba(59,130,246,0.3), 0 0 24px #3b82f6; transform: scale(1.1); }
         }
         .leaflet-container { background: #1a1f2e !important; }
       `}</style>
