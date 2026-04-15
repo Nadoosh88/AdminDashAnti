@@ -50,9 +50,34 @@ export default function RewardsPage() {
 
   return (
     <div className="content">
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '1.6rem', marginBottom: '4px' }}>Rewards Configuration</h1>
-        <p style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>Configure points and redemption rules</p>
+      <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h1 style={{ 
+            fontFamily: "'DM Sans', sans-serif", 
+            fontWeight: 700, 
+            fontSize: '1.1rem !important', 
+            marginBottom: '2px',
+            color: 'var(--text)'
+          }}>
+            Rewards Configuration
+          </h1>
+          <p style={{ color: 'var(--muted)', fontSize: '0.78rem' }}>Configure points and redemption rules</p>
+        </div>
+        <div style={{ 
+          background: 'rgba(34, 197, 94, 0.1)', 
+          border: '1px solid rgba(34, 197, 94, 0.2)',
+          borderRadius: '10px',
+          padding: '6px 12px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        }}>
+          <span style={{ fontSize: '1rem' }}>🎁</span>
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            500 Pts = 1 Free Ride
+          </span>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px', alignItems: 'start' }}>
@@ -76,17 +101,22 @@ export default function RewardsPage() {
               }}>
                 <span style={{ fontSize: '0.85rem', color: 'var(--text)', fontWeight: 500 }}>{rule.label}</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <input 
-                    type="number" 
+                  <select 
                     value={rule.points}
                     onChange={e => handleRuleChange(rule.id, e.target.value)}
                     style={{
-                      background: 'none', border: 'none', borderBottom: '1px solid var(--border)',
-                      color: 'var(--accent)', fontWeight: 800, width: '50px', textAlign: 'right',
-                      fontSize: '0.9rem', outline: 'none'
+                      background: 'var(--surface1)', border: '1px solid var(--border)',
+                      borderRadius: '6px',
+                      color: 'var(--accent)', fontWeight: 800, width: '70px',
+                      padding: '4px 8px',
+                      fontSize: '0.85rem', outline: 'none', cursor: 'pointer'
                     }}
-                  />
-                  <span style={{ color: 'var(--accent)', fontWeight: 800, fontSize: '0.9rem' }}>pts</span>
+                  >
+                    {[...Array(20)].map((_, i) => (
+                      <option key={i+1} value={i+1}>{i+1}</option>
+                    ))}
+                  </select>
+                  <span style={{ color: 'var(--accent)', fontWeight: 800, fontSize: '0.85rem' }}>pts</span>
                 </div>
               </div>
             ))}
@@ -142,16 +172,22 @@ export default function RewardsPage() {
                 )}
                 {leaderboard.map((student, idx) => (
                   <tr key={student.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                    <td style={{ padding: '16px 8px', fontSize: '0.82rem' }}>
-                      {MEDALS[idx + 1] || idx + 1}
+                    <td style={{ padding: '16px 8px', fontSize: '0.82rem', fontWeight: 700, color: 'var(--muted)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>{idx + 1}</span>
+                        <span style={{ fontSize: '1rem' }}>{MEDALS[idx + 1] || ''}</span>
+                      </div>
                     </td>
-                    <td style={{ padding: '16px 8px', fontSize: '0.82rem', fontWeight: 600 }}>
-                      {student.name}
+                    <td style={{ padding: '16px 8px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text)' }}>{student.name}</span>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '2px' }}>{student.email}</span>
+                      </div>
                     </td>
                     <td style={{ padding: '16px 8px', fontSize: '0.82rem', color: 'var(--accent2)', fontWeight: 700 }}>
                       {student.points?.total || 0} pts
                     </td>
-                    <td style={{ padding: '16px 8px', fontSize: '0.82rem', fontWeight: 800 }}>
+                    <td style={{ padding: '16px 8px', fontSize: '0.82rem', fontWeight: 800, color: '#4ade80' }}>
                       {student.points?.freeRides || 0}
                     </td>
                   </tr>
