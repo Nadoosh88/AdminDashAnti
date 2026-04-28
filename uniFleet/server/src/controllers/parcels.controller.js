@@ -19,12 +19,14 @@ const getAll = async (req, res, next) => {
 
 const create = async (req, res, next) => {
   try {
-    const { description, tripId, driverId } = req.body;
+    const { description, tripId, driverId, from, to } = req.body;
     const trackingCode = `JB-${Math.floor(1000 + Math.random() * 9000)}`;
     const parcel = await prisma.parcel.create({
       data: {
         trackingCode,
         description,
+        from: from || null,
+        to: to || null,
         tripId: tripId || null,
         driverId: driverId || null,
         status: 'pending'

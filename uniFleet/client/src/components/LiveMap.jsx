@@ -58,6 +58,7 @@ export default function LiveMap({ buses = [], height = '430px', trackedBusId = n
   const mapInstance = useRef(null);
   const markersRef = useRef({});
   const pathsRef = useRef({});
+  const hasSetInitialView = useRef(false);
 
   useEffect(() => {
     if (mapInstance.current) return;
@@ -66,7 +67,8 @@ export default function LiveMap({ buses = [], height = '430px', trackedBusId = n
       zoom: 12,
       zoomControl: true,
     });
-    L.tileLayer('http://{s}.google.com/vt?lyrs=m&x={x}&y={y}&z={z}', {
+    // Use HTTPS and mt1 subdomain for more reliable Google Maps tiles
+    L.tileLayer('https://mt1.google.com/vt?lyrs=m&x={x}&y={y}&z={z}', {
       maxZoom: 20,
       subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
       attribution: 'Map data ©2026 Google'
@@ -78,12 +80,22 @@ export default function LiveMap({ buses = [], height = '430px', trackedBusId = n
     
     // Zoom logic
     if (trackedBusId) {
-      const bus = buses.find(b => b.busId === trackedBusId || b.plateNumber === trackedBusId);
+      const bus = buses.find(b => String(b.busId) === String(trackedBusId) || b.plateNumber === trackedBusId);
       if (bus && bus.lat) {
-        mapInstance.current.setView([bus.lat, bus.lng], 16, { animate: true, duration: 1.5 });
+        // Smoothly follow the bus if tracking is enabled
+        mapInstance.current.panTo([bus.lat, bus.lng], { animate: true, duration: 1.0 });
+        // Only force zoom level once when starting tracking or if zoom is too far out
+        if (mapInstance.current.getZoom() < 15) {
+          mapInstance.current.setZoom(16);
+        }
       }
-    } else {
-      mapInstance.current.setView([31.9539, 35.9106], 12, { animate: true });
+    } else if (!hasSetInitialView.current && buses.length > 0) {
+      // Only set initial view once when buses first appear
+      const firstBus = buses[0];
+      if (firstBus && firstBus.lat) {
+        mapInstance.current.setView([firstBus.lat, firstBus.lng], 13, { animate: true });
+        hasSetInitialView.current = true;
+      }
     }
 
     const currentBusIds = new Set(buses.map(b => String(b.busId)));
@@ -97,11 +109,11 @@ export default function LiveMap({ buses = [], height = '430px', trackedBusId = n
         if (assignedRouteName !== activeRoute) isVisible = false;
       }
       if (trackedBusId) {
-        if (strBusId !== trackedBusId && bus.plateNumber !== trackedBusId) isVisible = false;
+        if (strBusId !== String(trackedBusId) && bus.plateNumber !== trackedBusId) isVisible = false;
       }
 
       const isEmergency = bus.status === 'fault' || bus.status === 'emergency';
-      const isTracked = trackedBusId && (strBusId === trackedBusId || bus.plateNumber === trackedBusId);
+      const isTracked = trackedBusId && (strBusId === String(trackedBusId) || bus.plateNumber === trackedBusId);
       const routeColor = ROUTE_COLORS[assignedRouteName] || '#10b981';
       const icon = makeBusIcon(isEmergency, isTracked, isVisible, routeColor);
       const label = `Bus ID: ${strBusId}`;
@@ -176,6 +188,7 @@ export default function LiveMap({ buses = [], height = '430px', trackedBusId = n
     });
 
   }, [buses, trackedBusId, activeRoute]);
+
 
   return (
     <div style={{ position: 'relative' }}>

@@ -42,7 +42,7 @@ export default function ParcelsPage() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [search, setSearch] = useState('');
-  const [newParcel, setNewParcel] = useState({ description: '', tripId: '', driverId: '' });
+  const [newParcel, setNewParcel] = useState({ description: '', tripId: '', driverId: '', from: '', to: '' });
 
   useEffect(() => { loadData(); }, []);
 
@@ -65,7 +65,7 @@ export default function ParcelsPage() {
     try {
       await createParcel(newParcel);
       setShowAddModal(false);
-      setNewParcel({ description: '', tripId: '', driverId: '' });
+      setNewParcel({ description: '', tripId: '', driverId: '', from: '', to: '' });
       await loadData();
     } catch (e) {
       console.error(e);
@@ -194,15 +194,17 @@ export default function ParcelsPage() {
                         </div>
                       )}
                       
-                      {parcel.trip && (
-                        <div style={{ 
-                          display: 'flex', alignItems: 'center', gap: '8px',
-                          fontSize: '0.75rem', color: 'var(--muted)'
-                        }}>
-                          <span>🛣️</span>
-                          <span style={{ fontWeight: 600, color: 'var(--text)' }}>{parcel.trip.route?.name}</span>
+                      <div style={{ display: 'flex', gap: '8px', fontSize: '0.75rem', color: 'var(--muted)', background: 'var(--surface2)', padding: '10px', borderRadius: '10px', border: '1px solid var(--border)' }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', opacity: 0.5, marginBottom: '2px' }}>Pick Up</div>
+                          <div style={{ fontWeight: 600, color: 'var(--text)' }}>{parcel.from || '—'}</div>
                         </div>
-                      )}
+                        <div style={{ width: '1px', background: 'var(--border)' }}></div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', opacity: 0.5, marginBottom: '2px' }}>Drop Off</div>
+                          <div style={{ fontWeight: 600, color: 'var(--text)' }}>{parcel.to || '—'}</div>
+                        </div>
+                      </div>
                     </div>
 
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
@@ -263,42 +265,49 @@ export default function ParcelsPage() {
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '8px', fontWeight: 600 }}>ASSIGN DRIVER</label>
-                <select 
+                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '8px', fontWeight: 600 }}>FROM (PICKUP)</label>
+                <input 
+                  placeholder="e.g. Engineering Gate"
                   style={{ 
                     width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)',
                     borderRadius: '12px', padding: '12px', color: 'var(--text)',
                     outline: 'none', fontSize: '0.85rem'
                   }}
-                  value={newParcel.driverId}
-                  onChange={e => setNewParcel({ ...newParcel, driverId: e.target.value })}
-                >
-                  <option value="">Select Driver</option>
-                  {drivers.map(d => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
-                  ))}
-                </select>
+                  value={newParcel.from}
+                  onChange={e => setNewParcel({ ...newParcel, from: e.target.value })}
+                />
               </div>
-
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '8px', fontWeight: 600 }}>ASSIGN TRIP</label>
-                <select 
+                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '8px', fontWeight: 600 }}>TO (DELIVERY)</label>
+                <input 
+                  placeholder="e.g. IT Building"
                   style={{ 
                     width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)',
                     borderRadius: '12px', padding: '12px', color: 'var(--text)',
                     outline: 'none', fontSize: '0.85rem'
                   }}
-                  value={newParcel.tripId}
-                  onChange={e => setNewParcel({ ...newParcel, tripId: e.target.value })}
-                >
-                  <option value="">None</option>
-                  {trips.map(t => (
-                    <option key={t.id} value={t.id}>
-                      {t.route?.name || 'Special Trip'}
-                    </option>
-                  ))}
-                </select>
+                  value={newParcel.to}
+                  onChange={e => setNewParcel({ ...newParcel, to: e.target.value })}
+                />
               </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '8px', fontWeight: 600 }}>ASSIGN DRIVER</label>
+              <select 
+                style={{ 
+                  width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)',
+                  borderRadius: '12px', padding: '12px', color: 'var(--text)',
+                  outline: 'none', fontSize: '0.85rem'
+                }}
+                value={newParcel.driverId}
+                onChange={e => setNewParcel({ ...newParcel, driverId: e.target.value })}
+              >
+                <option value="">Select Driver</option>
+                {drivers.map(d => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
             </div>
             <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
               <button className="btn btn-ghost" style={{ flex: 1, padding: '14px', borderRadius: '12px' }} onClick={() => setShowAddModal(false)}>Cancel</button>
